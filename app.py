@@ -19,9 +19,10 @@ with st.sidebar:
     page = st.radio("Navigation", ["Order Search", "Combined Blend", "Digital Job Order", "Execution Log"])
     st.caption("POC • sample SAP data")
     if st.session_state.execution:
-        st.info(f"{st.session_state.execution['execution_id']}
-
-{st.session_state.status}")
+        st.info(
+            f"{st.session_state.execution['execution_id']}\n\n"
+            f"{st.session_state.status}"
+        )
 
 if page == "Order Search":
     render_search(get_orders())
