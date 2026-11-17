@@ -17,7 +17,7 @@ def render_search(orders):
     st.title("Order Search")
     st.caption("POC: search and combine released SAP process orders.")
     c1,c2,c3=st.columns([2,1,1])
-    query=c1.text_input("Material / description", "GULF GEAR EP 90")
+    query=c1.text_input("Material / description", "SFG")
     status=c2.selectbox("Order status", ["Released","All"])
     capacity=c3.number_input("Tank capacity (L)", min_value=1000, value=15000, step=1000)
     df=orders.copy()
