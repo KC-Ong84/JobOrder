@@ -3,10 +3,10 @@ import pandas as pd
 def get_orders():
     # POC only. Replace this function with a Snowflake query later.
     return pd.DataFrame([
-        {"Select": True, "SAP Order":"11008476", "Material":"SFG-008921", "Description":"GULF GEAR EP 90", "Qty (L)":1460.0, "Date":"2026-11-16", "Status":"Released", "Formula":"V03"},
-        {"Select": True, "SAP Order":"11008495", "Material":"SFG-008921", "Description":"GULF GEAR EP 90", "Qty (L)":6000.0, "Date":"2026-11-16", "Status":"Released", "Formula":"V03"},
-        {"Select": False, "SAP Order":"11008502", "Material":"SFG-008921", "Description":"GULF GEAR EP 90", "Qty (L)":4000.0, "Date":"2026-11-17", "Status":"Released", "Formula":"V03"},
-        {"Select": False, "SAP Order":"11008511", "Material":"SFG-009114", "Description":"GULF HARMONY AW 68", "Qty (L)":8500.0, "Date":"2026-11-16", "Status":"Released", "Formula":"V02"},
+        {"Select": True, "SAP Order":"11008476", "Material":"SFG-008921", "Description":"SFG-10W40 AW46", "Qty (L)":1460.0, "Date":"2026-11-16", "Status":"Released", "Formula":"V03"},
+        {"Select": True, "SAP Order":"11008495", "Material":"SFG-008921", "Description":"SFGA1-10W40 AW46", "Qty (L)":6000.0, "Date":"2026-11-16", "Status":"Released", "Formula":"V03"},
+        {"Select": False, "SAP Order":"11008502", "Material":"SFG-008921", "Description":"SFGB1-10W40 AW46", "Qty (L)":4000.0, "Date":"2026-11-17", "Status":"Released", "Formula":"V03"},
+        {"Select": False, "SAP Order":"11008511", "Material":"SFG-009114", "Description":"SFGC AW 68", "Qty (L)":8500.0, "Date":"2026-11-16", "Status":"Released", "Formula":"V02"},
     ])
 
 def get_components():
