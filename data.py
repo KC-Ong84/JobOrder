@@ -1,19 +1,20 @@
 import pandas as pd
 
+
 def get_orders():
-    # Synthetic SAP-like POC data. Replace with Snowflake queries later.
+    """Fully synthetic demo data. No actual SAP/customer/material/order values."""
     return pd.DataFrame([
-        {"Select": True, "SAP Order":"11008476", "Material":"10304100100009001", "Description":"GULF HARMONY AW 68", "Qty (L)":1460.0, "Sales Order":"4020002506", "PO No.":"PO 2026-1002 (COSTA)", "Customer":"GULF OIL PANAMA", "Customer Batch / F.ID":"", "GAP Batch":"SGAA265117", "Date Issue":"2026-11-05", "Date Required":"2026-11-26", "Density @30C":0.8700, "Status":"Released", "Formula":"V03"},
-        {"Select": True, "SAP Order":"11008495", "Material":"10304100100009001", "Description":"GULF HARMONY AW 68", "Qty (L)":6000.0, "Sales Order":"4020002506", "PO No.":"PO 2026-1002 (COSTA)", "Customer":"GULF OIL PANAMA", "Customer Batch / F.ID":"", "GAP Batch":"SGAA265117", "Date Issue":"2026-11-05", "Date Required":"2026-11-26", "Density @30C":0.8700, "Status":"Released", "Formula":"V03"},
-        {"Select": False, "SAP Order":"11008502", "Material":"10304100100009001", "Description":"GULF HARMONY AW 68", "Qty (L)":4000.0, "Sales Order":"4020002507", "PO No.":"PO 2026-1003", "Customer":"GULF OIL PANAMA", "Customer Batch / F.ID":"", "GAP Batch":"", "Date Issue":"2026-11-06", "Date Required":"2026-11-27", "Density @30C":0.8700, "Status":"Released", "Formula":"V03"},
+        {"Select": True, "SAP Order": "POC100001", "Material": "FG-DEMO-001", "Description": "DEMO HYDRAULIC OIL 68", "Qty (L)": 2500.0, "Sales Order": "SO-DEMO-1001", "PO No.": "CUST-PO-DEMO-001", "Customer": "DEMO CUSTOMER A", "Customer Batch / F.ID": "CB-DEMO-001", "GAP Batch": "GB-DEMO-001", "Date Issue": "2026-11-18", "Date Required": "2026-11-20", "Density @30C": 0.8750, "Status": "Released", "Formula": "DEMO-V01"},
+        {"Select": True, "SAP Order": "POC100002", "Material": "FG-DEMO-001", "Description": "DEMO HYDRAULIC OIL 68", "Qty (L)": 4500.0, "Sales Order": "SO-DEMO-1001", "PO No.": "CUST-PO-DEMO-001", "Customer": "DEMO CUSTOMER A", "Customer Batch / F.ID": "CB-DEMO-001", "GAP Batch": "GB-DEMO-001", "Date Issue": "2026-11-18", "Date Required": "2026-11-20", "Density @30C": 0.8750, "Status": "Released", "Formula": "DEMO-V01"},
+        {"Select": False, "SAP Order": "POC100003", "Material": "FG-DEMO-001", "Description": "DEMO HYDRAULIC OIL 68", "Qty (L)": 3200.0, "Sales Order": "SO-DEMO-1002", "PO No.": "CUST-PO-DEMO-002", "Customer": "DEMO CUSTOMER A", "Customer Batch / F.ID": "CB-DEMO-002", "GAP Batch": "GB-DEMO-002", "Date Issue": "2026-11-18", "Date Required": "2026-11-21", "Density @30C": 0.8750, "Status": "Released", "Formula": "DEMO-V01"},
+        {"Select": False, "SAP Order": "POC100004", "Material": "FG-DEMO-002", "Description": "DEMO GEAR OIL 90", "Qty (L)": 6000.0, "Sales Order": "SO-DEMO-1003", "PO No.": "CUST-PO-DEMO-003", "Customer": "DEMO CUSTOMER B", "Customer Batch / F.ID": "CB-DEMO-003", "GAP Batch": "GB-DEMO-003", "Date Issue": "2026-11-18", "Date Required": "2026-11-22", "Density @30C": 0.9050, "Status": "Released", "Formula": "DEMO-V02"},
     ])
 
+
 def get_components():
-    # Columns follow the retained GP01 template. MIN, MAX and sounding qty are intentionally omitted.
+    """Fully synthetic formulation/component data for the POC."""
     return pd.DataFrame([
-        {"Seq":10,"Material Code":"10101301600107001","Material Description":"SN150 (ARAMCO PRIMA 150S)","Amt to Add (L)":3505.0,"Amt to Add (KG)":3049.0,"Percentage (%)":47.01,"UOM":"KG","Batch":"B007","Raw Material Check By":"","Actual Amount / Adjustment":3505.0},
-        {"Seq":20,"Material Code":"10102300400203001","Material Description":"500N (EM)","Amt to Add (L)":2763.0,"Amt to Add (KG)":2404.0,"Percentage (%)":37.04,"UOM":"KG","Batch":"T205","Raw Material Check By":"","Actual Amount / Adjustment":2762.0},
-        {"Seq":30,"Material Code":"10206303443136150","Material Description":"GA3136 - DRUM","Amt to Add (L)":160.0,"Amt to Add (KG)":160.0,"Percentage (%)":2.47,"UOM":"KG","Batch":"K38006267","Raw Material Check By":"","Actual Amount / Adjustment":160.0},
-        {"Seq":40,"Material Code":"10209300342200150","Material Description":"GA2200 - DRUM","Amt to Add (L)":47.0,"Amt to Add (KG)":47.0,"Percentage (%)":0.72,"UOM":"KG","Batch":"0102849954","Raw Material Check By":"","Actual Amount / Adjustment":47.0},
-        {"Seq":50,"Material Code":"10211300342130150","Material Description":"GA2130 - DRUM","Amt to Add (L)":4.0,"Amt to Add (KG)":4.0,"Percentage (%)":0.06,"UOM":"KG","Batch":"0000231754","Raw Material Check By":"","Actual Amount / Adjustment":4.0},
+        {"Seq": 10, "Material Code": "RM-DEMO-001", "Material Description": "DEMO BASE OIL LIGHT", "Amt to Add (L)": 4200.0, "Amt to Add (KG)": 3612.0, "Percentage (%)": 60.00, "UOM": "KG", "Batch": "BATCH-DEMO-A", "Raw Material Check By": "", "Actual Amount / Adjustment": 4200.0},
+        {"Seq": 20, "Material Code": "RM-DEMO-002", "Material Description": "DEMO BASE OIL HEAVY", "Amt to Add (L)": 2450.0, "Amt to Add (KG)": 2205.0, "Percentage (%)": 35.00, "UOM": "KG", "Batch": "BATCH-DEMO-B", "Raw Material Check By": "", "Actual Amount / Adjustment": 2450.0},
+        {"Seq": 30, "Material Code": "AD-DEMO-001", "Material Description": "DEMO ADDITIVE PACKAGE", "Amt to Add (L)": 350.0, "Amt to Add (KG)": 385.0, "Percentage (%)": 5.00, "UOM": "KG", "Batch": "BATCH-DEMO-C", "Raw Material Check By": "", "Actual Amount / Adjustment": 350.0},
     ])
