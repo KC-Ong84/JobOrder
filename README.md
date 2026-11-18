@@ -1,50 +1,20 @@
-# JobOrder
+# JobOrder POC v2
 
-Streamlit proof-of-concept for a digital blending job-order execution workflow.
+Updated Streamlit POC aligned to the retained GP01 Job Order template.
 
-## POC flow
+## Retained SAP/header fields
+Material description/code, sales or transfer order, PO number, customer batch/F.ID, GAP batch, customer, date issue, process order, density at 30C, demanded quantity and description.
 
-1. Search sample released SAP orders
-2. Select compatible orders
-3. Create a combined JobOrder
-4. Validate blend / formulation / tank capacity
-5. Release a digital GP01-style job order
-6. Enter batch and actual/adjustment information
-7. Complete and retain an execution log for the browser session
+## Captured shopfloor fields
+Component batch, actual/adjusted amount, raw-material checker, resource, AWT, heating temperature, blending time, verification names, actual start/end timestamps, previous product/batch, flushing details, batch-label verification and remarks.
 
-## Repository
+## Intentionally omitted
+Date Required, Density at 15C, Packing Weight, MIN, MAX, Raw Material Sounding Quantity, Inspection Lot, Marking and Overblend.
 
-```text
-JobOrder/
-├── .streamlit/config.toml
-├── app.py
-├── data.py
-├── execution.py
-├── ui.py
-├── requirements.txt
-└── README.md
-```
-
-## Run locally
-
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-## Streamlit Community Cloud
-
+## Deploy
 - Repository: `KC-Ong84/JobOrder`
 - Branch: `main`
-- Main file path: `app.py`
+- Main file: `app.py`
 
-## POC vs production
-
-The POC deliberately has no Snowflake or SAP credentials. `data.py` holds sample SAP-like rows and `st.session_state` holds temporary execution state.
-
-For the Snowflake version:
-
-- replace `get_orders()` / `get_components()` with Snowflake queries;
-- persist headers, source orders, component snapshots and logs into Snowflake tables;
-- trigger controlled SAP write-back through an outbound queue consumed by Workato;
-- keep SAP-derived requirement columns read-only in the UI.
+## Current persistence
+This POC uses `st.session_state`. Production should store the header, components, captured execution fields and log in Snowflake.

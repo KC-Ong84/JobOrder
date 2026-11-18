@@ -1,105 +1,102 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date, time
 from execution import selected_orders, validate_combination, create_execution
 
-CSS = """
+st.markdown("""
 <style>
-.block-container{padding-top:1.2rem;max-width:1500px}
-.jo-title{text-align:center;color:#173b57;font-size:1.35rem;font-weight:800;padding:.5rem;border-bottom:2px solid #173b57;margin-bottom:1rem}
-.field-label{font-size:.72rem;color:#667887;font-weight:700;text-transform:uppercase}
-.field-value{font-size:.98rem;color:#21323f;font-weight:700;margin-bottom:.8rem}
-</style>
-"""
-st.markdown(CSS, unsafe_allow_html=True)
+.block-container{padding-top:1rem;max-width:1550px}.jo-title{text-align:center;color:#173b57;font-size:1.35rem;font-weight:800;padding:.45rem;border-bottom:2px solid #173b57;margin-bottom:.8rem}.source{font-size:.72rem;color:#667887;font-weight:700;text-transform:uppercase}.value{font-size:.95rem;color:#21323f;font-weight:700;margin-bottom:.65rem}.retained{background:#e8f4ee;padding:.55rem .8rem;border-radius:.4rem;color:#1e6b50}.removed{background:#f5f6f7;padding:.55rem .8rem;border-radius:.4rem;color:#677783}
+</style>""",unsafe_allow_html=True)
+
+def _log(action):
+    e=st.session_state.execution
+    st.session_state.log.append([datetime.now(),e["execution_id"],st.session_state.status,action])
+
+def _capture(key, value): st.session_state.order_capture[key]=value
 
 def render_search(orders):
     st.title("Order Search")
-    st.caption("POC: search and combine released SAP process orders.")
-    c1,c2,c3=st.columns([2,1,1])
-    query=c1.text_input("Material / description", "SFG")
-    status=c2.selectbox("Order status", ["Released","All"])
-    capacity=c3.number_input("Tank capacity (L)", min_value=1000, value=15000, step=1000)
+    q=st.text_input("Material / description / process order", "GULF HARMONY AW 68")
+    c1,c2=st.columns(2); status=c1.selectbox("Order status",["Released","All"]); capacity=c2.number_input("Tank capacity (L)",1000,50000,15000,500)
     df=orders.copy()
-    if query:
-        q=query.lower()
-        df=df[df.apply(lambda r:q in str(r["Material"]).lower() or q in str(r["Description"]).lower(),axis=1)]
-    if status != "All": df=df[df["Status"]==status]
-    edited=st.data_editor(df, hide_index=True, width="stretch", disabled=[c for c in df.columns if c!="Select"], key="order_select")
-    picked=selected_orders(edited)
+    if q:
+        x=q.lower(); df=df[df.apply(lambda r:any(x in str(r[c]).lower() for c in ["Material","Description","SAP Order"]),axis=1)]
+    if status!="All": df=df[df["Status"]==status]
+    show=["Select","SAP Order","Material","Description","Qty (L)","Sales Order","Customer","GAP Batch","Date Required","Status","Formula"]
+    edited=st.data_editor(df[show],hide_index=True,width="stretch",disabled=[c for c in show if c!="Select"],key="order_select")
+    picked_ids=edited.loc[edited["Select"],"SAP Order"].tolist(); picked=df[df["SAP Order"].isin(picked_ids)]
     total=float(picked["Qty (L)"].sum()) if not picked.empty else 0
-    m1,m2,m3=st.columns(3)
-    m1.metric("Selected orders",len(picked)); m2.metric("Combined quantity",f"{total:,.0f} L"); m3.metric("Capacity remaining",f"{capacity-total:,.0f} L")
-    errors=validate_combination(picked, capacity)
-    for e in errors: st.error(e)
-    if st.button("Create combined JobOrder", type="primary", disabled=bool(errors)):
-        st.session_state.execution=create_execution(picked)
-        st.session_state.status="DRAFT"
-        st.session_state.log.append([datetime.now(),st.session_state.execution["execution_id"],"DRAFT","Created from SAP orders"])
-        st.success("JobOrder created. Continue to Combined Blend.")
+    m1,m2,m3=st.columns(3); m1.metric("Selected orders",len(picked)); m2.metric("Combined quantity",f"{total:,.0f} L"); m3.metric("Capacity remaining",f"{capacity-total:,.0f} L")
+    errors=validate_combination(picked,capacity)
+    for error in errors: st.error(error)
+    if st.button("Create combined JobOrder",type="primary",disabled=bool(errors)):
+        st.session_state.execution=create_execution(picked); st.session_state.status="DRAFT"; _log("Created from SAP process orders"); st.success("Created. Continue to Combined Blend.")
 
 def render_validation():
     st.title("Combined Blend")
     e=st.session_state.execution
-    if not e:
-        st.warning("Create a JobOrder from Order Search first."); return
-    l,r=st.columns([1.6,1])
-    checks=pd.DataFrame([
-        ["Blend material",e["material"],"PASS"],
-        ["Formulation",e["formula"],"PASS"],
-        ["Base UoM","L / KG available","PASS"],
-        ["Tank capacity",f'{e["quantity_l"]:,.0f} L <= 15,000 L',"PASS"],
-        ["Active assignment","None","PASS"],
-    ],columns=["Check","Result","Status"])
-    l.dataframe(checks,hide_index=True,width="stretch")
+    if not e: st.warning("Create a JobOrder first."); return
+    checks=pd.DataFrame([["Blend material",e["material"],"PASS"],["Formula",e["formula"],"PASS"],["Customer",e["customer"],"PASS"],["GAP batch",e["gap_batch"] or "To be assigned","PASS"],["Tank capacity",f'{e["quantity_l"]:,.0f} L <= 15,000 L',"PASS"]],columns=["Check","Result","Status"])
+    l,r=st.columns([1.6,1]); l.dataframe(checks,hide_index=True,width="stretch")
     with r:
-        st.subheader("Execution preview")
-        st.metric("Source orders",len(e["orders"])); st.metric("Total blend",f'{e["quantity_l"]:,.0f} L')
-        e["tank"]=st.selectbox("Resource / Tank",["TK-12","TK-14","TK-16"])
-        st.write("Orders:",", ".join(e["orders"]))
-        if st.button("Release JobOrder",type="primary"):
-            st.session_state.status="RELEASED"
-            st.session_state.log.append([datetime.now(),e["execution_id"],"RELEASED","Released for execution"])
-            st.success("Released for execution.")
+        st.metric("Source orders",len(e["orders"])); st.metric("Total blend",f'{e["quantity_l"]:,.0f} L'); e["tank"]=st.selectbox("Resource",["BT01","BT02","BT03"])
+        if st.button("Release JobOrder",type="primary"): st.session_state.status="RELEASED"; _log("Released for execution"); st.success("Released.")
 
 def render_job_order():
     st.title("Digital Job Order")
     e=st.session_state.execution
-    if not e:
-        st.warning("Create a JobOrder first."); return
-    st.markdown('<div class="jo-title">GULF ASIA-PACIFIC PTE LTD • BLENDING JOB ORDER (GP01)</div>',unsafe_allow_html=True)
-    fields=[("Material Description",e["description"]),("Material Code",e["material"]),("Process Order No."," + ".join(e["orders"])),("GAP Batch No.","SG7A265159"),("Status",st.session_state.status),("Demanded Quantity",f'{e["quantity_l"]:,.0f} L'),("Formula",e["formula"]),("Resource / Tank",e["tank"])]
+    if not e: st.warning("Create a JobOrder first."); return
+    st.markdown('<div class="jo-title">GULF ASIA-PACIFIC PTE LTD • JOB-ORDER (GP01)</div>',unsafe_allow_html=True)
+    st.caption("SAP-derived fields are displayed as read-only. Shopfloor fields replace the handwritten entries on the obsolete form.")
+    fields=[("Material Description",e["description"]),("Material Code",e["material"]),("Sales Order / Transfer Order",", ".join(e["sales_orders"])),("PO No.",", ".join(e["po_numbers"])),("Customer Batch No. / F.ID",e["customer_batch"] or "To be captured"),("GAP Batch No.",e["gap_batch"] or "To be assigned"),("Customer Name",e["customer"]),("Date Issue",e["date_issue"]),("Process Order No."," + ".join(e["orders"])),("Density @30C",f'{e["density_30c"]:.4f}'),("Demanded Quantity",f'{e["quantity_l"]:,.0f} L'),("Description",e["description"])]
     cols=st.columns(4)
-    for i,(k,v) in enumerate(fields):
-        cols[i%4].markdown(f'<div class="field-label">{k}</div><div class="field-value">{v}</div>',unsafe_allow_html=True)
-    st.subheader("Raw Material Charging")
-    edited=st.data_editor(st.session_state.components,hide_index=True,width="stretch",disabled=["Seq","Material Code","Material Description","Amt to Add (L)","Amt to Add (KG)","Percentage (%)"],key="component_editor")
+    for i,(k,v) in enumerate(fields): cols[i%4].markdown(f'<div class="source">{k}</div><div class="value">{v}</div>',unsafe_allow_html=True)
+    st.subheader("Formulation / Raw Material Charging")
+    edited=st.data_editor(st.session_state.components,hide_index=True,width="stretch",disabled=["Seq","Material Code","Material Description","Amt to Add (L)","Amt to Add (KG)","Percentage (%)","UOM"],column_config={"Batch":st.column_config.TextColumn(required=True),"Raw Material Check By":st.column_config.TextColumn(),"Actual Amount / Adjustment":st.column_config.NumberColumn(format="%.2f")},key="component_editor")
     st.session_state.components=edited
-    t1,t2,t3,t4=st.columns(4)
-    start=t1.text_input("Actual Start","16 Nov 08:15")
-    end=t2.text_input("Actual End","")
-    heat=t3.number_input("Heating Temperature °C",value=55)
-    blend=t4.number_input("Blending Time (min)",value=120)
+    totals=pd.DataFrame([{"Material Description":"TOTAL","Amt to Add (L)":edited["Amt to Add (L)"].sum(),"Amt to Add (KG)":edited["Amt to Add (KG)"].sum(),"Percentage (%)":edited["Percentage (%)"].sum(),"Actual Amount / Adjustment":edited["Actual Amount / Adjustment"].sum()}]); st.dataframe(totals,hide_index=True,width="stretch")
+
+    st.subheader("Execution Details")
     a,b,c,d=st.columns(4)
-    prev=a.text_input("Previous Batch","SG7A265148")
-    flush=b.selectbox("Flushing Required",["No","Yes"])
-    flushed=c.text_input("Flushed With","")
-    remark=d.text_input("Remark","")
+    resource=a.selectbox("Resource",["BT01","BT02","BT03"],index=["BT01","BT02","BT03"].index(e["tank"]) if e["tank"] in ["BT01","BT02","BT03"] else 0)
+    awt=b.number_input("AWT",min_value=0.0,value=0.0,step=0.1)
+    heat=c.number_input("Heating Temperature (°C)",min_value=0.0,value=55.0,step=1.0)
+    blend_time=d.number_input("Blending Time (minutes)",min_value=0,value=120,step=5)
+    a,b,c,d=st.columns(4)
+    start_date=a.date_input("Actual Start Date",value=date.today()); start_time=b.time_input("Actual Start Time",value=time(8,0)); end_date=c.date_input("Actual End Date",value=date.today()); end_time=d.time_input("Actual End Time",value=time(10,0))
+    a,b,c=st.columns(3)
+    heating_verified=a.text_input("Heating Temperature Verified By")
+    blending_verified=b.text_input("Blending Time Verified By")
+    batch_label_verified=c.text_input("Batch Number Verified Against Label By")
+
+    st.subheader("Previous Batch and Flushing")
+    a,b,c,d=st.columns(4)
+    previous_product=a.text_input("Previous Product Blended in Tank")
+    previous_batch=b.text_input("Previous Batch No.")
+    flushing_required=c.selectbox("Flushing Required",["No","Yes"])
+    flushed_with=d.text_input("Flushed With",disabled=flushing_required=="No")
+    a,b,c=st.columns(3)
+    flushing_qty=a.number_input("Flushing Quantity",min_value=0.0,value=0.0,step=1.0,disabled=flushing_required=="No")
+    flushing_date=b.date_input("Flushing Date",value=date.today(),disabled=flushing_required=="No")
+    remark=c.text_area("Remark",height=70)
+
+    st.markdown('<div class="retained"><b>Captured shopfloor data:</b> component batch, actual/adjusted quantity, raw material checker, resource, AWT, heating temperature, blending time, verification names, start/end timestamps, previous product/batch, flushing details and remarks.</div>',unsafe_allow_html=True)
+    with st.expander("Fields intentionally not carried forward"):
+        st.markdown('<div class="removed">Date Required, Density @15C, Packing Weight, MIN, MAX, Raw Material Sounding Quantity, Inspection Lot, Marking and Overblend. These were marked for removal in the retained template.</div>',unsafe_allow_html=True)
+
+    save_payload={"resource":resource,"awt":awt,"heating_temperature":heat,"blending_time_minutes":blend_time,"actual_start":f"{start_date} {start_time}","actual_end":f"{end_date} {end_time}","heating_verified_by":heating_verified,"blending_verified_by":blending_verified,"batch_label_verified_by":batch_label_verified,"previous_product":previous_product,"previous_batch":previous_batch,"flushing_required":flushing_required,"flushed_with":flushed_with,"flushing_quantity":flushing_qty,"flushing_date":str(flushing_date),"remark":remark}
     x,y,z=st.columns([1,1,2])
-    if x.button("Save",type="primary"):
-        st.session_state.status="IN PROGRESS"
-        st.session_state.log.append([datetime.now(),e["execution_id"],"IN PROGRESS","Execution data saved"])
-        st.toast("Saved in POC session")
-    if y.button("Complete"):
-        st.session_state.status="COMPLETED"
-        st.session_state.log.append([datetime.now(),e["execution_id"],"COMPLETED","Ready for future Workato/SAP queue"])
-        st.success("Completed. Production version would write to Snowflake and optionally create the outbound Workato queue record.")
-    z.download_button("Download component CSV",edited.to_csv(index=False).encode(),file_name=f'{e["execution_id"]}_components.csv',mime="text/csv")
+    if x.button("Save JobOrder",type="primary"):
+        st.session_state.order_capture=save_payload; st.session_state.status="IN PROGRESS"; _log("Retained template and shopfloor fields saved in POC session"); st.success("Saved in the current POC session.")
+    if y.button("Complete JobOrder"):
+        st.session_state.order_capture=save_payload; st.session_state.status="COMPLETED"; _log("Completed and ready for Snowflake persistence / Workato queue"); st.success("Completed.")
+    export=edited.copy(); export["JobOrder"] = e["execution_id"]
+    z.download_button("Download Component Record",export.to_csv(index=False).encode(),file_name=f'{e["execution_id"]}_components.csv',mime="text/csv")
 
 def render_log():
     st.title("Execution Log")
-    if not st.session_state.log:
-        st.info("No activity yet."); return
-    df=pd.DataFrame(st.session_state.log,columns=["Timestamp","JobOrder","Status","Action"])
-    st.dataframe(df,hide_index=True,width="stretch")
-    st.caption("POC uses Session State. Production will persist this to BLEND_EXECUTION_LOG in Snowflake.")
+    if not st.session_state.log: st.info("No activity yet."); return
+    st.dataframe(pd.DataFrame(st.session_state.log,columns=["Timestamp","JobOrder","Status","Action"]),hide_index=True,width="stretch")
+    if st.session_state.order_capture:
+        st.subheader("Latest Captured Order Fields"); st.json(st.session_state.order_capture)
+    st.caption("POC persistence is Session State only. Production should commit these values to Snowflake tables.")

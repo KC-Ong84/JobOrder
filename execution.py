@@ -6,23 +6,25 @@ def selected_orders(df):
 def validate_combination(df, tank_capacity):
     errors=[]
     if df.empty:
-        errors.append("Select at least one SAP order.")
-        return errors
-    if df["Material"].nunique() != 1:
-        errors.append("Selected orders do not have the same blend material.")
-    if df["Formula"].nunique() != 1:
-        errors.append("Selected orders do not have the same formulation version.")
+        return ["Select at least one SAP order."]
+    for field, label in [("Material","material"),("Formula","formulation"),("Customer","customer"),("GAP Batch","GAP batch")]:
+        populated=df[field].fillna("").astype(str)
+        if populated.nunique() != 1:
+            errors.append(f"Selected orders do not share the same {label}.")
     if float(df["Qty (L)"].sum()) > tank_capacity:
         errors.append("Combined quantity exceeds tank capacity.")
     return errors
 
-def create_execution(df, tank="TK-12"):
+def create_execution(df, tank="BT01"):
+    first=df.iloc[0]
     return {
         "execution_id": f"JO-{datetime.now():%Y%m%d-%H%M%S}",
         "orders": df["SAP Order"].tolist(),
-        "material": df.iloc[0]["Material"],
-        "description": df.iloc[0]["Description"],
-        "formula": df.iloc[0]["Formula"],
-        "quantity_l": float(df["Qty (L)"].sum()),
-        "tank": tank,
+        "material": first["Material"], "description": first["Description"],
+        "formula": first["Formula"], "quantity_l": float(df["Qty (L)"].sum()),
+        "sales_orders": sorted(df["Sales Order"].dropna().astype(str).unique().tolist()),
+        "po_numbers": sorted(df["PO No."].dropna().astype(str).unique().tolist()),
+        "customer": first["Customer"], "customer_batch": first["Customer Batch / F.ID"],
+        "gap_batch": first["GAP Batch"], "date_issue": first["Date Issue"],
+        "density_30c": float(first["Density @30C"]), "tank": tank,
     }

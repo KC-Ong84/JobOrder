@@ -1,18 +1,19 @@
 import streamlit as st
 from data import get_orders, get_components
-from execution import selected_orders, validate_combination, create_execution
 from ui import render_search, render_validation, render_job_order, render_log
 
 st.set_page_config(page_title="JobOrder", page_icon="📋", layout="wide")
 
-if "execution" not in st.session_state:
-    st.session_state.execution = None
-if "status" not in st.session_state:
-    st.session_state.status = "DRAFT"
-if "components" not in st.session_state:
-    st.session_state.components = get_components()
-if "log" not in st.session_state:
-    st.session_state.log = []
+DEFAULTS = {
+    "execution": None,
+    "status": "DRAFT",
+    "components": get_components(),
+    "log": [],
+    "order_capture": {},
+}
+for key, value in DEFAULTS.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
 
 with st.sidebar:
     st.title("JobOrder")
