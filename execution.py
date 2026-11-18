@@ -7,7 +7,7 @@ def validate_combination(df, tank_capacity):
     errors=[]
     if df.empty:
         return ["Select at least one SAP order."]
-    for field, label in [("Material","material"),("Formula","formulation"),("Customer","customer"),("GAP Batch","GAP batch")]:
+    for field, label in [("Material","material"),("Formula","formulation")]:
         populated=df[field].fillna("").astype(str)
         if populated.nunique() != 1:
             errors.append(f"Selected orders do not share the same {label}.")
