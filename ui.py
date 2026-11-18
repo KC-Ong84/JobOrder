@@ -8,16 +8,6 @@ st.markdown("""
 .block-container{padding-top:1rem;max-width:1550px}
 .jo-title{text-align:center;color:#173b57;font-size:1.35rem;font-weight:800;padding:.45rem;border-bottom:2px solid #173b57;margin-bottom:.8rem}
 .retained{background:#e8f4ee;padding:.55rem .8rem;border-radius:.4rem;color:#1e6b50}
-.sap-box{border:1px solid #d5dee5;border-radius:7px;overflow:hidden;margin:.4rem 0 1.25rem;background:#fff}
-.sap-head{display:flex;justify-content:space-between;padding:.55rem .8rem;background:#f3f6f8;border-bottom:1px solid #d5dee5;color:#173b57;font-size:.83rem;font-weight:800}
-.sap-head .ro{color:#71808c;font-size:.70rem}
-.sap-row{display:grid;grid-template-columns:17% 33% 17% 33%;border-bottom:1px solid #e1e7eb;min-height:42px}
-.sap-row:last-child{border-bottom:none}
-.sap-field,.sap-value{display:flex;align-items:center;padding:.5rem .65rem;box-sizing:border-box}
-.sap-field{background:#f7f9fa;color:#51636f;font-size:.77rem;font-weight:700;border-right:1px solid #e1e7eb}
-.sap-value{color:#172b3a;font-size:.90rem;font-weight:600;border-right:1px solid #e1e7eb;word-break:break-word}
-.sap-row > div:last-child{border-right:none}
-@media (max-width:900px){.sap-row{grid-template-columns:32% 68%}.sap-row .sap-field:nth-of-type(3){border-top:1px solid #e1e7eb}.sap-row .sap-value:nth-of-type(4){border-top:1px solid #e1e7eb}.sap-value{border-right:none}}
 </style>""", unsafe_allow_html=True)
 
 
@@ -73,13 +63,21 @@ def render_job_order():
         ("Process Order No."," + ".join(e["orders"]),"Density @30C",f'{e["density_30c"]:.4f}'),
         ("Demanded Quantity",f'{e["quantity_l"]:,.0f} L',"Description",e["description"]),
     ]
-    # One HTML block is intentional. Streamlit columns create separate containers and can
-    # visually fall back to four label/value blocks; this preserves the paper-form grid.
-    html=['<div class="sap-box"><div class="sap-head"><span>SAP ORDER INFORMATION</span><span class="ro">READ ONLY</span></div>']
+    # Render the SAP header with st.html and inline styles. This avoids a rerun where
+    # the content appears before/separately from the CSS rules.
+    box = ["""<div style="border:1px solid #d5dee5;border-radius:7px;overflow:hidden;margin:8px 0 20px;background:#fff;font-family:Arial,sans-serif;">
+      <div style="display:flex;justify-content:space-between;padding:9px 13px;background:#f3f6f8;border-bottom:1px solid #d5dee5;color:#173b57;font-size:13px;font-weight:700;">
+        <span>SAP ORDER INFORMATION</span><span style="color:#71808c;font-size:11px;">READ ONLY</span>
+      </div>"""]
     for f1,v1,f2,v2 in rows:
-        html.append(f'<div class="sap-row"><div class="sap-field">{f1}</div><div class="sap-value">{v1}</div><div class="sap-field">{f2}</div><div class="sap-value">{v2}</div></div>')
-    html.append('</div>')
-    st.markdown(''.join(html),unsafe_allow_html=True)
+        box.append(f"""<div style="display:grid;grid-template-columns:17% 33% 17% 33%;border-bottom:1px solid #e1e7eb;min-height:43px;">
+          <div style="display:flex;align-items:center;padding:8px 10px;background:#f7f9fa;color:#51636f;font-size:12px;font-weight:700;border-right:1px solid #e1e7eb;">{f1}</div>
+          <div style="display:flex;align-items:center;padding:8px 12px;color:#172b3a;font-size:14px;font-weight:600;border-right:1px solid #e1e7eb;word-break:break-word;">{v1}</div>
+          <div style="display:flex;align-items:center;padding:8px 10px;background:#f7f9fa;color:#51636f;font-size:12px;font-weight:700;border-right:1px solid #e1e7eb;">{f2}</div>
+          <div style="display:flex;align-items:center;padding:8px 12px;color:#172b3a;font-size:14px;font-weight:600;word-break:break-word;">{v2}</div>
+        </div>""")
+    box.append("</div>")
+    st.html("".join(box))
 
     st.subheader("Formulation / Raw Material Charging")
     edited=st.data_editor(st.session_state.components,hide_index=True,width="stretch",disabled=["Seq","Material Code","Material Description","Amt to Add (L)","Amt to Add (KG)","Percentage (%)","UOM"],column_config={"Batch":st.column_config.TextColumn(required=True),"Raw Material Check By":st.column_config.TextColumn(),"Actual Amount / Adjustment":st.column_config.NumberColumn(format="%.2f")},key="component_editor")
