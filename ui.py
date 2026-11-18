@@ -16,7 +16,7 @@ def _capture(key, value): st.session_state.order_capture[key]=value
 
 def render_search(orders):
     st.title("Order Search")
-    q=st.text_input("Material / description / process order", "GULF HARMONY AW 68")
+    q=st.text_input("Material / description / process order", "DEMO")
     c1,c2=st.columns(2); status=c1.selectbox("Order status",["Released","All"]); capacity=c2.number_input("Tank capacity (L)",1000,50000,15000,500)
     df=orders.copy()
     if q:
